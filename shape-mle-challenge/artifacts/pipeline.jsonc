@@ -1,0 +1,29 @@
+// Scikit-learn pipeline metadata
+// Each step corresponds to a scikit-learn estimator or model
+// Some may point to a fitted object to be loaded, such as `model`
+{
+    "steps": {
+        "reduce_dim": {
+            "PolynomialFeatures": {
+                "degree": 2
+            }
+        },
+        "qtransf": {
+            "QuantileTransformer": {
+                "output_distribution":"normal"
+            }
+        },
+        "poly_feature": {
+            "PolynomialFeatures": {
+                "degree": 2
+            }
+        },
+        "stdscaler": {
+            "StandardScaler": {
+                "with_mean": true,
+                "with_std": true
+            }
+        },
+        "model":"artifacts/model.pkl"
+    }
+}
