@@ -20,21 +20,21 @@ import pandas as pd
 
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
-from sklearn.svm import OneClassSVM, LinearSVC, NuSVR
+# from sklearn.svm import OneClassSVM, LinearSVC, NuSVR
 
 from config import CONFIG_FILE_PATHS, TRANSFORMER_CLASSES
 
 
-# Create the directory (and all parent directories) if they don't exist
-log_file_path = CONFIG_FILE_PATHS['log_file_path']
-os.makedirs(log_file_path, exist_ok=True)
+# Create the logs folder if it does not exist
+logs_folder = 'logs/'
+os.makedirs(logs_folder, exist_ok=True)
 
 # Configure logging (for storing INFO, WARNING, ERROR, and CRITICAL messages.)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', # format
     handlers=[
-        # logging.FileHandler(log_file_path), # save
+        logging.FileHandler(CONFIG_FILE_PATHS['log_file_path']), # save
         logging.StreamHandler() # print to console
     ]
 )
@@ -55,14 +55,22 @@ class DataLoader:
 
         Returns: 
             Loaded dataframe
+        
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If data is empty
         """
 
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f'Data file not found at {file_path}.')
+            logger.error(
+                f'FileNotFoundError: Data file not found at {file_path}.'
+                )
+            raise FileNotFoundError('Data file not found at {file_path}.')
         
         data = pd.read_parquet(file_path)
 
         if data.empty:
+            logger.error('ValueError: Loaded data is empty.')
             raise ValueError('Loaded data is empty.')
 
         return data
@@ -76,10 +84,22 @@ class DataLoader:
 
         Returns: 
             Loaded model
+
+        Raises:
+            ValueError: If model path is invalid or loading fails
         """
         config = DataLoader._load_and_parse_jsonc(file_path)
         # joblib is more suitable for sklearn models than pickle
-        return joblib.load(config["steps"]["model"]) 
+        if (model_in_steps := config.get("steps", {}).get("model")) is None:
+            logger.error('Model not found in config steps.')
+            raise ValueError('Model not found in config steps.')
+        
+        try:
+            return joblib.load(model_in_steps) 
+        
+        except:
+            logger.error('Not possible to load model from config steps.')
+            raise ValueError('Not possible to load model from config steps.')
         
 
     @staticmethod
@@ -91,6 +111,9 @@ class DataLoader:
 
         Returns: 
             Configured sklearn Pipeline
+
+        Raises:
+            ValueError: For invalid config or missing transformers
         """
         
         # Load pipeline from cached jsonc
@@ -108,16 +131,15 @@ class DataLoader:
             transformer_name, params = next(iter(step_config.items()))
 
             if transformer_name not in TRANSFORMER_CLASSES.keys():
+                logger.error(
+                    f'Could not import transformer {transformer_name} as it is not included in `TRANSFORMER_CLASSES`.'
+                    )
                 raise ValueError(
                     f'Could not import transformer {transformer_name} as it is not included in `TRANSFORMER_CLASSES`.'
                     ) 
             transformer_class = TRANSFORMER_CLASSES[transformer_name]
             
             steps.append((step_name, transformer_class(**params)))
-        
-        # # Load model as the final step
-        # model = joblib.load(pipeline_config["steps"]["model"])
-        # steps.append(("model", model))
 
         # Create the pipeline
         pipeline = Pipeline(steps)
@@ -139,6 +161,7 @@ class DataLoader:
             FileNotFoundError: If file doesn't exist
             ValueError: If JSON parsing fails
         """
+
         if not os.path.exists(file_path):
             raise FileNotFoundError(f'File not found at {file_path}.')
         
@@ -165,15 +188,26 @@ class ModelScorer:
         self.pipeline = pipeline
 
     def preprocess_data(self, data: pd.DataFrame):
+        """Preprocess input data using the pipeline.
+        
+        Args:
+            data: Input data to be transformed
+            
+        Returns:
+            Transformed data
+
+        Raises:
+            ValueError: If transformation fails
+        """
         try:
-            # Handle missing values
+            
             transformed_data = self.pipeline.fit_transform(data)
-            # transformed_data.fillna(0, inplace=True)
+            
             return transformed_data
         
         except Exception as e:
-            logger.error(f"Data transformation failed: {str(e)}")
-            raise ValueError("Data preprocessing failed") 
+            logger.error('Data preprocessing failed.')
+            raise ValueError('Data preprocessing failed.') 
             
         
     def score(self, data: pd.DataFrame, input_columns: list[str]) -> np.ndarray:
@@ -185,6 +219,9 @@ class ModelScorer:
             
         Returns:
             Model predictions
+
+        Raises:
+            RuntimeError: If scoring fails
         """
 
         work_data = data[input_columns].copy()
@@ -192,14 +229,16 @@ class ModelScorer:
             transformed_data = self.preprocess_data(work_data)
 
             if len(transformed_data) == 0:
-                raise RuntimeError('No data to score')
+                logger.error('No data to score.')
+                raise RuntimeError('No data to score.')
             return self.model.predict(transformed_data)
+        
         except Exception as e:
-            logger.error(f"Scoring failed: {str(e)}")
-            raise RuntimeError("Model scoring failed") from e
+            logger.error(f'Scoring failed: {str(e)}.')
+            raise RuntimeError('Model scoring failed.') from e
 
 
-def main() -> Optional[np.ndarray]:
+def run_pipeline() -> Optional[np.ndarray]:
     """
     Main execution function for standalone script operation.
     
@@ -207,31 +246,31 @@ def main() -> Optional[np.ndarray]:
         Model predictions or None if failed
     """
     try:
-        logger.info("Starting scoring process")
+        logger.info('Starting scoring process...')
         
         # Load assets
-        data = DataLoader.load_data(CONFIG_FILE_PATHS["data_file_path"])
-        model = DataLoader.load_model(CONFIG_FILE_PATHS["pipeline_file_path"])
+        data = DataLoader.load_data(CONFIG_FILE_PATHS['data_file_path'])
+        model = DataLoader.load_model(CONFIG_FILE_PATHS['pipeline_file_path'])
         pipeline = DataLoader.load_pipeline(
-            CONFIG_FILE_PATHS["pipeline_file_path"]
+            CONFIG_FILE_PATHS['pipeline_file_path']
             )
         input_columns = ['vibration_x', 'vibration_y', 'vibration_z']
         
         # Score data
         scorer = ModelScorer(model, pipeline)
         predictions = scorer.score(data, input_columns)
-        breakpoint()
-        logger.info("Scoring completed successfully")
+        logger.info('Scoring completed successfully.')
+
         return predictions
         
     except Exception as e:
-        logger.exception("Scoring process failed")
+        logger.exception('Scoring process failed.')
         return None
 
 
 if __name__ == '__main__':
-    predictions = main()
+    predictions = run_pipeline()
     if predictions is not None:
         print(predictions)
     else:
-        print("Scoring failed - check logs for details")
+        print('Scoring failed - check logs for details.')

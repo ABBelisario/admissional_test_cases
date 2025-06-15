@@ -9,14 +9,18 @@ writing proper documentation, and making it more suitable for a product release.
 - Docummentation of planned improvements 
 
 ## Changes description
-- Include a docstring at beginning for describing file content
-- Reorder libraries import
-- Properly load and read the available assets
-
-- Include requirements file
+- Include docstrings for better documentation
+- Order libraries import in a pythonic manner
+- Create a `config.py` file for configuration settings and constants
+- Modularize the original methods into classes for making the code more readable, easy to maintain
+- Inside the classes, define methods which are task-specific
+- Configure logging for proper register and save the occurencies
+- Include requirements.txt file
 
 ### Details:
 - Change from pickle to joblib for loading the model, as joblib is usually faster and more pythonic for sklearn models
+- There was no nan values in the input dataset, no need replacing nan by zero
 
 
 ## Planned improvements
+- Include pydantic validators for catching errors early, ensure consistency, improve debugging and maintainability, and optimize performance

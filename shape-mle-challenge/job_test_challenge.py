@@ -1,50 +1,32 @@
-"""""" 
-# TODO: 
-#   add docstring
-#   creat requirements.txt
 
-import datetime
-import json
-import pickle
-import re
-
-import numpy as np
 import pandas as pd
 
 
 from sklearn.decomposition import PCA
 from sklearn.svm import OneClassSVM, LinearSVC, NuSVR
+import datetime
 from sklearn.preprocessing import *
 
 from sklearn.pipeline import Pipeline
+import pickle
+import numpy as np
 
 pipeline_file_path = 'artifacts/pipeline.jsonc'
-model_file_path = 'artifacts/model.pkl'
 data_file_path = 'data/dataset.parquet'
 
 
 # Load any asset
 def load(type, **kwargs):
     if (type == 'data') :
-        return pd.read_parquet(data_file_path)
-
+        # TODO: Implement a method to read the data file and return a dataframe
+        ...
     if (type == 'model'):
-        with open(model_file_path, 'rb') as f:
-            return pickle.load(f)
-
         with open('artifacts/pipeline.jsonc', 'r') as f:
             str_json = '\n'.join(f.readlines()[3:])
-        
+        import json
         with open(json.loads(str_json)["steps"]['model'], 'rb') as f:
             return pickle.load(f)
-        
     if (type == 'pipeline'):
-        raise NotImplementedError()
-
-    if (type == 'pipeline'):
-        with open(pipeline_file_path) as f:
-            content = re.sub(r'\/\/.*|\/\*[\s\S]*?\*\/', '', f.read()) # Remove comments from jsonc file
-        data = json.loads(content)
         raise NotImplementedError()
     else:
         return None
@@ -85,6 +67,3 @@ def score():
 
 if __name__ == '__main__':
     print(score())
-
-
-
