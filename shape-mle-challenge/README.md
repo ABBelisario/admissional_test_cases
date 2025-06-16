@@ -24,3 +24,13 @@ writing proper documentation, and making it more suitable for a product release.
 
 ## Planned improvements
 - Include pydantic validators for catching errors early, ensure consistency, improve debugging and maintainability, and optimize performance
+- Create tests for the main components of the pipeline:
+    - parquet dataset loading
+    - model loading
+    - pipeline building
+    - scoring workflow
+- Create complementary tests for:
+    - edge cases (eg.: very large dataset)
+    - error handling
+    - integration of all components
+

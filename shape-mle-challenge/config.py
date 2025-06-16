@@ -1,18 +1,21 @@
 """
 Configuration file, containing the constants and settings for running the main file
 """
+from pathlib import Path
 from sklearn.preprocessing import (
     PolynomialFeatures,
     QuantileTransformer,
     StandardScaler
 )
 
-CONFIG_FILE_PATHS = {
-    'model_file_path': 'artifacts/model.pkl',
-    'pipeline_file_path': 'artifacts/pipeline.jsonc',
-    'data_file_path': 'data/dataset.parquet',
-    'log_file_path': 'logs/failure.lo',
-}
+
+class Settings():
+    DATA_PATH: Path = Path('data/dataset.parquet')
+    PIPELINE_CONFIG_PATH: Path = Path('artifacts/pipeline.jsonc')
+    LOG_DIR: Path = Path('logs')
+
+settings = Settings()
+
 
 TRANSFORMER_CLASSES = {
     "PolynomialFeatures": PolynomialFeatures,
