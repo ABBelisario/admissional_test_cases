@@ -21,7 +21,6 @@ writing proper documentation, and making it more suitable for a product release.
 - Change from pickle to joblib for loading the model, as joblib is usually faster and more pythonic for sklearn models
 - There was no nan values in the input dataset, no need replacing nan by zero
 
-
 ## Planned improvements
 - Include pydantic validators for catching errors early, ensure consistency, improve debugging and maintainability, and optimize performance
 - Create tests for the main components of the pipeline:
@@ -34,3 +33,7 @@ writing proper documentation, and making it more suitable for a product release.
     - error handling
     - integration of all components
 
+*Latest version: June 16th, 2025*
+
+*Solution proposed by Ana Brandão Belisario*
+*You can contact her via email at: anabbelisario@gmail.com*
